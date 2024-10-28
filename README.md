@@ -128,7 +128,12 @@ public class BankImpl extends UnicastRemoteObject implements Bank {
 ```
 
 ### Penjelasan
-- ``Fitur Penarikan Tanpa Kartu``: Menggunakan cardlessWithdraw untuk melakukan penarikan tanpa kartu dengan kode unik. Jika uniqueCode cocok dengan nomor akun, dan saldo mencukupi, saldo akan dikurangi dan transaksi dicatat.
+- ``checkBalance(String accountNo, String pin)``: Mengimplementasikan pengecekan saldo akun dengan mengakses data akun.
+- ``transferFunds(String fromAccount, String toAccount, double amount, String pin)``: Mengimplementasikan transfer dana antara dua akun dan mengurangi saldo.
+- ``getTransactionHistory(String accountNo, String pin)``: Mengimplementasikan riwayat transaksi dengan mengakses daftar transaksi yang disimpan.
+- ``login(String accountNo, String pin)``: Mengimplementasikan fungsi login dengan memverifikasi akun dan PIN.
+- ``cardlessWithdraw(String uniqueCode, double amount)``: Fitur Baru; memungkinkan penarikan tunai tanpa kartu menggunakan kode unik yang terdaftar pada akun.
+- ``Konstruktur BankImpl()``: Inisialisasi akun, PIN, saldo awal, kode unik, dan riwayat transaksi.
 
 ### 3. `BankClient.java (Klien)`
 Kelas BankClient menyediakan antarmuka konsol bagi pengguna untuk berinteraksi dengan aplikasi bank. Ini termasuk login, menu operasi bank, dan opsi penarikan tanpa kartu.
@@ -235,8 +240,45 @@ public class BankClient {
 }
 ```
 ### Penjelasan
-- `Menu Bank`: Pengguna dapat memilih opsi untuk mengecek saldo, transfer dana, melihat riwayat transaksi, atau keluar.
-- `Penarikan Tanpa Kartu`: Jika pengguna memilih menu 5, mereka dapat memasukkan kode unik dan jumlah penarikan. Sistem akan memanggil cardlessWithdraw pada server untuk melakukan penarikan jika valid.
+- ``main(String[] args)``: Mengelola seluruh proses interaksi pengguna melalui antarmuka konsol, termasuk:
+  - Login: Memverifikasi login pengguna.
+  - Cek Saldo: Menampilkan saldo pengguna.
+  - Transfer Dana: Memproses transfer dana antar-akun.
+  - Lihat Riwayat Transaksi: Menampilkan riwayat transaksi pengguna.
+  - Penarikan Tanpa Kartu: Memungkinkan pengguna melakukan penarikan tunai tanpa kartu melalui kode unik.
+
+### 4. ``BankServer.java(Server)``
+Kelas BankServer.java bertanggung jawab untuk memulai server RMI (Remote Method Invocation) dan membuat instance dari BankImpl, yaitu kelas implementasi yang menyediakan layanan perbankan sesuai antarmuka Bank. Kode ini mengikat instance BankImpl ke registry RMI, sehingga klien dapat mengakses metode yang disediakan oleh BankImpl melalui jaringan.
+
+java
+
+```bash
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+
+public class BankServer {
+    public static void main(String[] args) {
+        try {
+            BankImpl bankImpl = new BankImpl();           
+            Bank stub = (Bank) UnicastRemoteObject.exportObject(bankImpl, 0);            
+            Registry registry = LocateRegistry.createRegistry(1099);            
+            registry.rebind("BankService", stub);
+
+            System.out.println("Bank server siap.");
+        } catch (Exception e) {
+            System.err.println("Bank server mengalami kesalahan: " + e.toString());
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+### Penjelasan
+- BankImpl dibuat sebagai instance. Kelas BankImpl ini merupakan implementasi dari antarmuka Bank, yang menyediakan semua logika bisnis perbankan, seperti pengecekan saldo, transfer, dan penarikan tanpa kartu.
+- Dengan menggunakan UnicastRemoteObject.exportObject, bankImpl diekspor sebagai objek stub, yang kemudian dapat diakses secara remote. Stub ini adalah representasi remote dari objek bankImpl yang sesungguhnya.
+- rebind digunakan untuk mengikat stub dengan nama BankService di registry RMI. Klien nantinya akan menggunakan nama ini (BankService) untuk mencari dan mengakses layanan bank dari server.
+- e.printStackTrace() akan menampilkan detail kesalahan untuk memudahkan proses debugging.
 
 ## Fitur yang Tersedia
 
